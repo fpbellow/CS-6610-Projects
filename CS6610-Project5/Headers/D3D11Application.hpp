@@ -51,20 +51,31 @@ private:
 	WRL::ComPtr<ID3D11DepthStencilState> _depthState = nullptr;
 	WRL::ComPtr<ID3D11Debug> _debug = nullptr;
 
-	WRL::ComPtr<ID3D11Buffer> _perFrameConstantBuffer = nullptr;
-	WRL::ComPtr<ID3D11Buffer> _perObjectConstantBuffer = nullptr;
-
 	WRL::ComPtr<ID3D11SamplerState> _linearSamplerState = nullptr;
 	WRL::ComPtr<ID3D11ShaderResourceView> _fallbackTextureSrv = nullptr;
+
 
 	WRL::ComPtr<ID3D11Texture2D> _renderTexture = nullptr;
 	WRL::ComPtr<ID3D11Buffer> _renTexVertexBuffer = nullptr;
 	WRL::ComPtr<ID3D11RenderTargetView> _renderTextureView = nullptr;
 	WRL::ComPtr<ID3D11ShaderResourceView> _textureResourceView = nullptr;
 
-	PerFrameConstantBuffer _perFrameConstantBufferData{};
-	PerObjectConstantBuffer _perObjectConstantBufferData{};
 
+	WRL::ComPtr<ID3D11Buffer> _renTexPFrameCBuffer = nullptr;
+	WRL::ComPtr<ID3D11Buffer> _renTexPObjectCBuffer = nullptr;
+	WRL::ComPtr<ID3D11Buffer> _renTexLightCBuffer = nullptr;
+	WRL::ComPtr<ID3D11Buffer> _renTexMaterialCBuffer = nullptr;
+
+	WRL::ComPtr<ID3D11Buffer> _quadPFrameCBuffer = nullptr;
+	WRL::ComPtr<ID3D11Buffer> _quadPObjectCBuffer = nullptr;
+
+	PerFrameConstantBuffer _renTexPFrameCBufferData{};
+	PerObjectConstantBuffer _renTexPObjectCBufferData{};
+	LightConstantBuffer _renTexLightCBufferData{};
+	MaterialConstantBuffer _renTexMaterialCBufferData{};
+
+	PerFrameConstantBuffer _quadPFrameCBufferData{};
+	PerObjectConstantBuffer _quadPObjectCBufferData{};
 
 	ShaderCollection _shaderCollection;
 	ShaderCollection _renderTexShaderCollection;

@@ -6,11 +6,18 @@ class InputHandler
 public:
 	
 	static bool toggleGuiMenu;
+
 	static float xRotation;
 	static float yRotation;
 	static float camX;
 	static float camY;
 	static float camDistance;
+	
+
+	static float quadRotX;
+	static float quadRotY;
+
+	static float quadCamDist;
 
 	static void Initialize(float x, float y, float camDist);
 
@@ -23,6 +30,8 @@ public:
 private:
 	static bool moveCam;
 	static bool cursorLock;
+	static bool modKey;
+
 	static float mouseXStart;
 	static float mouseYStart;
 };

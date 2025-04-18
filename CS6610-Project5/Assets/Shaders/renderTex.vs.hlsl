@@ -19,17 +19,20 @@ cbuffer PerFrame : register(b0)
 {
     matrix viewprojection;
     float4 viewPos;
-    float4 lightPos;
-    float4 lightColor;
 };
 
 cbuffer PerObject : register(b1)
 {
     matrix modelmatrix;
     matrix invTranspose;
-    float3 matColor;
-    float shininess;
 };
+
+cbuffer Light : register(b2)
+{
+    float4 lightPos;
+    float4 lightColor;
+};
+
 
 VSOutput Main(VSInput input)
 {

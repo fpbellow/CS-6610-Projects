@@ -27,8 +27,10 @@ D3D11Application::~D3D11Application()
 	_deviceContext->Flush();
 	_vertexBuffer.Reset();
 	_renTexVertexBuffer.Reset();
-	_perFrameConstantBuffer.Reset();
-	_perObjectConstantBuffer.Reset();
+	_renTexPFrameCBuffer.Reset();
+	_renTexPObjectCBuffer.Reset();
+	_renTexLightCBuffer.Reset();
+	_renTexMaterialCBuffer.Reset();
 	_shaderCollection.Destroy();
 	_renderTexShaderCollection.Destroy();
 	DestroySwapchainResources();
@@ -209,10 +211,18 @@ void D3D11Application::CreateConstantBuffers()
 	desc.ByteWidth = sizeof(PerFrameConstantBuffer);
 	desc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
 
-	_device->CreateBuffer(&desc, nullptr, &_perFrameConstantBuffer);
+	_device->CreateBuffer(&desc, nullptr, &_renTexPFrameCBuffer);
+	_device->CreateBuffer(&desc, nullptr, &_quadPFrameCBuffer);
 
 	desc.ByteWidth = sizeof(PerObjectConstantBuffer);
-	_device->CreateBuffer(&desc, nullptr, &_perObjectConstantBuffer);
+	_device->CreateBuffer(&desc, nullptr, &_renTexPObjectCBuffer);
+	_device->CreateBuffer(&desc, nullptr, &_quadPObjectCBuffer);
+
+	desc.ByteWidth = sizeof(LightConstantBuffer);
+	_device->CreateBuffer(&desc, nullptr, &_renTexLightCBuffer);
+
+	desc.ByteWidth = sizeof(MaterialConstantBuffer);
+	_device->CreateBuffer(&desc, nullptr, &_renTexMaterialCBuffer);
 }
 
 void D3D11Application::CreateRenderTextureResources()
@@ -276,10 +286,10 @@ void D3D11Application::CreateRenderTextureResources()
 	if (_materials[0].specularTexture == nullptr)
 		_materials[0].specularTexture = _fallbackTextureSrv;
 
-	_perFrameConstantBufferData.lightColor = DirectX::XMFLOAT4(materials[0].specular.x, materials[0].specular.y, materials[0].specular.z, 1.0f);
+	_renTexLightCBufferData.lightColor = DirectX::XMFLOAT4(materials[0].specular.x, materials[0].specular.y, materials[0].specular.z, 1.0f);
 
-	_perObjectConstantBufferData.materialColor = materials[0].diffuse;
-	_perObjectConstantBufferData.shininess = materials[0].shininess;
+	_renTexMaterialCBufferData.materialColor = materials[0].diffuse;
+	_renTexMaterialCBufferData.shininess = materials[0].shininess;
 
 	D3D11_SAMPLER_DESC linearSamplerStateDescriptor = {};
 	linearSamplerStateDescriptor.Filter = D3D11_FILTER::D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
@@ -346,9 +356,11 @@ void D3D11Application::Update()
 
 	static float _scale = 1.0f;
 
-	XMFLOAT3 _cameraPosition = { 0.0, 0.0, InputHandler::camDistance };
+	
 
-	//camera configuration + view and proj matrices
+	//camera configuration + view and proj matrices for teapot scene
+	///////
+	XMFLOAT3 _cameraPosition = { 0.0, 0.0, InputHandler::camDistance };
 	XMVECTOR camPos = XMLoadFloat3(&_cameraPosition);
 	XMMATRIX revolveY = XMMatrixRotationY(InputHandler::camX);
 	XMMATRIX revolveX = XMMatrixRotationX(InputHandler::camY);
@@ -356,51 +368,91 @@ void D3D11Application::Update()
 	camPos = XMVector3Transform(camPos, revolveY);
 	camPos = XMVector3Transform(camPos, revolveX);
 
-	XMMATRIX view = XMMatrixLookAtRH(camPos, g_XMZero, { 0,1,0,0 });
+	XMMATRIX potView = XMMatrixLookAtRH(camPos, g_XMZero, { 0.0, 1.0, 0.0, 0.0 });
 
 	XMMATRIX proj = XMMatrixPerspectiveFovRH( 90.0f * 0.0174533f, static_cast<float>(_width) / static_cast<float>(_height), 0.1f, 100.0f);
 
-	XMMATRIX viewProjection = XMMatrixMultiply(view, proj);
-	XMStoreFloat4x4(&_perFrameConstantBufferData.viewProjectionMatrix, viewProjection);
+	XMMATRIX potViewProjection = XMMatrixMultiply(potView, proj);
+	XMStoreFloat4x4(&_renTexPFrameCBufferData.viewProjectionMatrix, potViewProjection);
 
 	XMFLOAT3 lightPosition = XMFLOAT3(1.0, 2.0, 4.0);
 	XMFLOAT3 lightColor = XMFLOAT3(1.0, 1.0, 1.0);
 
-	_perFrameConstantBufferData.viewPos = XMFLOAT4(_cameraPosition.x, _cameraPosition.y, _cameraPosition.z, 1.0);
-	_perFrameConstantBufferData.lightPos = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 0.0);
+	_renTexPFrameCBufferData.viewPos = XMFLOAT4(_cameraPosition.x, _cameraPosition.y, _cameraPosition.z, 1.0);
+	_renTexLightCBufferData.lightPos = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 0.0);
 
 	//3d object transformations
-	XMMATRIX originTranslation = XMMatrixTranslation(0.0f, 0.0f, -0.3f);
-
+	XMMATRIX potOriginTranslation = XMMatrixTranslation(0.0f, 0.0f, -0.3f);
 
 	XMMATRIX translation = XMMatrixTranslation(0, 0, 0.0);
 	XMMATRIX scaling = XMMatrixScaling(_scale, _scale, _scale);
-	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(InputHandler::yRotation, InputHandler::xRotation, 0);
+	XMMATRIX potRotation = XMMatrixRotationRollPitchYaw(InputHandler::yRotation, InputHandler::xRotation, 0.0);
 
 	//model matrix
-	XMMATRIX modelMatrix = originTranslation * scaling * rotation * translation;
-	XMStoreFloat4x4(&_perObjectConstantBufferData.modelMatrix, modelMatrix); 
+	XMMATRIX modelMatrix = potOriginTranslation * scaling * potRotation * translation;
+	XMStoreFloat4x4(&_renTexPObjectCBufferData.modelMatrix, modelMatrix);
+	
 
 	XMMATRIX invTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, modelMatrix));
-	XMStoreFloat4x4(&_perObjectConstantBufferData.invTranspose, invTranspose);
+	XMStoreFloat4x4(&_renTexPObjectCBufferData.invTranspose, invTranspose);
+	///////
 
-	XMFLOAT3 materialColor = XMFLOAT3(1.0, 0.0, 0.0);
-	float shineVal = 32;
 
-	
+
+	//configuration for quad matrices
+	///////
+	XMFLOAT3 _quadCamPos = { 0.0, 0.0, InputHandler::quadCamDist };
+	XMVECTOR quadCamPos = XMLoadFloat3(&_quadCamPos);
+
+	XMMATRIX quadView = XMMatrixLookAtRH(quadCamPos, g_XMZero, { 0.0, 1.0, 0.0, 0.0 });
+	XMMATRIX quadViewProjection = XMMatrixMultiply(quadView, proj);
+	XMStoreFloat4x4(&_quadPFrameCBufferData.viewProjectionMatrix, quadViewProjection);
+
+	_quadPFrameCBufferData.viewPos = XMFLOAT4(_quadCamPos.x, _quadCamPos.y, _quadCamPos.z, 1.0);
+
+	XMMATRIX quadRotation = XMMatrixRotationRollPitchYaw(InputHandler::quadRotY, InputHandler::quadRotX, 0.0);
+	modelMatrix = scaling * quadRotation * translation;
+	XMStoreFloat4x4(&_quadPObjectCBufferData.modelMatrix, modelMatrix);
+
+	invTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, modelMatrix));
+	XMStoreFloat4x4(&_quadPObjectCBufferData.invTranspose, invTranspose);
+
+	///////
+
+
 
 	_menuData.showMenu = InputHandler::toggleGuiMenu;
 	ImGuiMenu::Update(_menuData);
 
 	//update constant buffers
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	_deviceContext->Map(_perFrameConstantBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	memcpy(mappedResource.pData, &_perFrameConstantBufferData, sizeof(PerFrameConstantBuffer));
-	_deviceContext->Unmap(_perFrameConstantBuffer.Get(), 0);
+	//render to texture constant buffers
+	_deviceContext->Map(_renTexPFrameCBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, &_renTexPFrameCBufferData, sizeof(PerFrameConstantBuffer));
+	_deviceContext->Unmap(_renTexPFrameCBuffer.Get(), 0);
 
-	_deviceContext->Map(_perObjectConstantBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-	memcpy(mappedResource.pData, &_perObjectConstantBufferData, sizeof(PerObjectConstantBuffer));
-	_deviceContext->Unmap(_perObjectConstantBuffer.Get(), 0);
+	_deviceContext->Map(_renTexPObjectCBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, &_renTexPObjectCBufferData, sizeof(PerObjectConstantBuffer));
+	_deviceContext->Unmap(_renTexPObjectCBuffer.Get(), 0);
+
+	_deviceContext->Map(_renTexLightCBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, &_renTexLightCBufferData, sizeof(LightConstantBuffer));
+	_deviceContext->Unmap(_renTexLightCBuffer.Get(), 0);
+	
+	_deviceContext->Map(_renTexMaterialCBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, &_renTexMaterialCBufferData, sizeof(MaterialConstantBuffer));
+	_deviceContext->Unmap(_renTexMaterialCBuffer.Get(), 0);
+
+
+	//textured quad constant buffers
+	_deviceContext->Map(_quadPFrameCBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, &_quadPFrameCBufferData, sizeof(PerFrameConstantBuffer));
+	_deviceContext->Unmap(_quadPFrameCBuffer.Get(), 0);
+
+	_deviceContext->Map(_quadPObjectCBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, &_quadPObjectCBufferData, sizeof(PerObjectConstantBuffer));
+	_deviceContext->Unmap(_quadPObjectCBuffer.Get(), 0);
+
 }
 
 
@@ -445,14 +497,16 @@ void D3D11Application::Render()
 	_deviceContext->PSSetShaderResources(1, 1, _materials[0].specularTexture.GetAddressOf());
 	_deviceContext->PSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
 
-	ID3D11Buffer* constantBuffers[2] =
+	ID3D11Buffer* renderTextureConstantBuffers[4] =
 	{
-		_perFrameConstantBuffer.Get(),
-		_perObjectConstantBuffer.Get()
+		_renTexPFrameCBuffer.Get(),
+		_renTexPObjectCBuffer.Get(),
+		_renTexLightCBuffer.Get(),
+		_renTexMaterialCBuffer.Get()
 	};
 
-	_deviceContext->VSSetConstantBuffers(0, 2, constantBuffers);
-	_deviceContext->PSSetConstantBuffers(1, 1, &constantBuffers[1]);
+	_deviceContext->VSSetConstantBuffers(0, 3, renderTextureConstantBuffers);
+	_deviceContext->PSSetConstantBuffers(3, 1, &renderTextureConstantBuffers[3]);
 	_deviceContext->Draw(_drawCount, 0);
 
 
@@ -470,6 +524,14 @@ void D3D11Application::Render()
 	_shaderCollection.ApplyToContext(_deviceContext.Get());
 	_deviceContext->PSSetShaderResources(0, 1, _textureResourceView.GetAddressOf());
 	_deviceContext->PSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
+
+	ID3D11Buffer* quadConstatBuffers[2] =
+	{
+		_quadPFrameCBuffer.Get(),
+		_quadPObjectCBuffer.Get()
+	};
+
+	_deviceContext->VSSetConstantBuffers(0, 2, quadConstatBuffers);
 
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 

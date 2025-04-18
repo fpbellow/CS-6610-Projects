@@ -13,10 +13,8 @@ struct PSOutput
     float4 color : SV_Target0;
 };
 
-cbuffer PerObject : register(b1)
+cbuffer Material : register(b3)
 {
-    matrix modelmatrix;
-    matrix invTranspose;
     float3 matColor;
     float shininess;
 };

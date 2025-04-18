@@ -9,22 +9,23 @@ struct PerFrameConstantBuffer
 {
 	DirectX::XMFLOAT4X4 viewProjectionMatrix;
 	DirectX::XMFLOAT4 viewPos;
-	DirectX::XMFLOAT4 lightPos;
-	DirectX::XMFLOAT4 lightColor;
 };
 
 struct PerObjectConstantBuffer
 {
 	DirectX::XMFLOAT4X4 modelMatrix;
 	DirectX::XMFLOAT4X4 invTranspose;
+
+};
+
+struct LightConstantBuffer
+{
+	DirectX::XMFLOAT4 lightPos;
+	DirectX::XMFLOAT4 lightColor;
+};
+
+struct MaterialConstantBuffer
+{
 	DirectX::XMFLOAT3 materialColor;
 	float shininess;
 };
-
-
-struct ObjectTransforms
-{
-	DirectX::XMFLOAT3 rotation;
-	float camDistance;
-};
-

@@ -2,7 +2,7 @@
 
 int main()
 {
-	D3D11Application app{ "CS6610 - Project 3" };
+	D3D11Application app{ "CS6610 - Project 4" };
 	app.Run();
 	return 0;
 }

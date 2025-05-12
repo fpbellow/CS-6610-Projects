@@ -22,7 +22,7 @@ void ImGuiMenu::Update(ImGuiMenuData menuData)
 
 	if (menuData.showMenu)
 	{
-		ImGui::Begin("CS6610 - Project 3");
+		ImGui::Begin("CS6610 - Project 5");
 		ImGui::Text("Obj File: %s", menuData.objFile.c_str());
 		
 		ImGui::Text("Number of Vertices: %u", menuData.numVertices);

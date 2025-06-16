@@ -43,7 +43,7 @@ bool D3D11Application::Initialize()
 		return false;
 	}
 
-	InputHandler::Initialize(0.0f, -DirectX::XM_PIDIV2, 1.5f);
+	InputHandler::Initialize(0.0f, 0.0, 1.5f);
 
 	glfwSetMouseButtonCallback(_window, InputHandler::mouseButtonCallback);
 	glfwSetCursorPosCallback(_window, InputHandler::mouseCursorCallback);
@@ -212,6 +212,7 @@ void D3D11Application::CreateConstantBuffers()
 	desc.CPUAccessFlags = D3D10_CPU_ACCESS_WRITE;
 
 	_device->CreateBuffer(&desc, nullptr, &_perFrameConstantBuffer);
+	_device->CreateBuffer(&desc, nullptr, &_refFrameConstantBuffer);
 
 	desc.ByteWidth = sizeof(PerObjectConstantBuffer);
 	_device->CreateBuffer(&desc, nullptr, &_teapotObjConstantBuffer);
@@ -236,6 +237,10 @@ void D3D11Application::CreateRenderTextureResources()
 	_device->CreateTexture2D(&textureDesc, nullptr, &_renderTexture);
 	_device->CreateRenderTargetView(_renderTexture.Get(), nullptr, &_renderTextureView);
 	_device->CreateShaderResourceView(_renderTexture.Get(), nullptr, &_textureResourceView);
+
+	float aspectRatio = static_cast<float>(GetWindowWidth()) / static_cast<float>(GetWindowHeight());
+	float widthScale = 1.0f / aspectRatio;
+	_perFrameConstantBufferData.aspectRatio = DirectX::XMFLOAT4(static_cast<float>(GetWindowWidth()), static_cast<float>(GetWindowHeight()), aspectRatio, widthScale);
 }
 
 
@@ -334,8 +339,12 @@ bool D3D11Application::Load()
 	shaderDescriptor.InputElems = VertexType::InputElements;
 	shaderDescriptor.NumElems = VertexType::InputElementCount;
 
-
 	_teapotShaderCollection = ShaderCollection::CreateShaderCollection(shaderDescriptor, _device.Get());
+
+	shaderDescriptor.VertexShaderFilePath = L"../Assets/Shaders/teapotref.vs.hlsl";
+	shaderDescriptor.PixelShaderFilePath = L"../Assets/Shaders/teapotref.ps.hlsl";
+
+	_refTeapotShaderCollection = ShaderCollection::CreateShaderCollection(shaderDescriptor, _device.Get());
 	
 	_menuData.objFile = "../Assets/Models/teapot/teapot.obj";
 	std::vector<VertexType> vertices;
@@ -454,8 +463,9 @@ void D3D11Application::Update()
 
 	static float _scale = 1.0f;
 
-	XMFLOAT3 _cameraPosition = { 0.0, 0.0, InputHandler::camDistance };
-
+	XMFLOAT3 _cameraPosition = { 0.0f, 0.5f, InputHandler::camDistance };
+	
+	
 	//camera configuration + view and proj matrices
 	XMVECTOR camPos = XMLoadFloat3(&_cameraPosition);
 	
@@ -464,14 +474,42 @@ void D3D11Application::Update()
 	XMVECTOR camRotate = XMQuaternionMultiply(camPitch, camYaw);
 
 	camPos = XMVector3Rotate(camPos, camRotate);
-	
+	_menuData.camPos[0] = XMVectorGetX(camPos);
+	_menuData.camPos[1] = XMVectorGetY(camPos);
+	_menuData.camPos[2] = XMVectorGetZ(camPos);
 
-	XMMATRIX view = XMMatrixLookAtRH(camPos, g_XMZero, { 0,1,0,0 });
+	XMVECTOR focusPos = { 0, _cameraPosition.y, 0, 0 };
+	XMVECTOR upDir = { 0,1,0,0 };
+
+	XMMATRIX view = XMMatrixLookAtRH(camPos, focusPos, upDir);
 
 	XMMATRIX proj = XMMatrixPerspectiveFovRH( 90.0f * 0.0174533f, static_cast<float>(_width) / static_cast<float>(_height), 0.1f, 100.0f);
 
-	XMMATRIX viewProjection = XMMatrixMultiply(view, proj);
-	XMStoreFloat4x4(&_perFrameConstantBufferData.viewProjectionMatrix, viewProjection);
+	XMStoreFloat4x4(&_perFrameConstantBufferData.viewMatrix, view);
+	XMStoreFloat4x4(&_perFrameConstantBufferData.projectionMatrix, proj);
+	
+
+
+
+	XMVECTOR plane = XMVectorSet(0, 1, 0, 0);  // Assuming plane y = 0
+	XMMATRIX reflectionMatrix = XMMatrixReflect(plane);
+
+
+	XMVECTOR refCamPos = { XMVectorGetX(camPos ), XMVectorGetY(camPos), -XMVectorGetZ(camPos)};
+
+	refCamPos = XMVector3TransformCoord(refCamPos, reflectionMatrix);
+	refCamPos = XMVector3Rotate(refCamPos, camRotate);
+
+	XMVECTOR refFocusPos = XMVector3TransformCoord(focusPos, reflectionMatrix);
+	XMVECTOR refUpDir = XMVector3TransformCoord(upDir, reflectionMatrix);
+
+	XMMATRIX refView = XMMatrixLookAtRH(refCamPos, refFocusPos, refUpDir);
+
+	XMStoreFloat4x4(&_refFrameConstantBufferData.viewMatrix, refView);
+	XMStoreFloat4x4(&_refFrameConstantBufferData.projectionMatrix, proj);
+
+
+
 
 	XMFLOAT3 lightPosition = XMFLOAT3(1.0, 4.0, -2);
 	XMFLOAT3 lightColor = XMFLOAT3(1.0, 1.0, 1.0);
@@ -484,9 +522,9 @@ void D3D11Application::Update()
 	XMMATRIX originTranslation = XMMatrixTranslation(0.0f, 0.0f, -0.3f);
 
 
-	XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+	XMMATRIX translation = XMMatrixTranslation(0.0f, 0.1f, 0.0f);
 	XMMATRIX scaling = XMMatrixScaling(_scale, _scale, _scale);
-	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(InputHandler::yRotation, InputHandler::xRotation, 0);
+	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(-XM_PIDIV2,0 , 0);
 	_menuData.potRotX = InputHandler::xRotation;
 	_menuData.potRotY = InputHandler::yRotation;
 
@@ -499,7 +537,8 @@ void D3D11Application::Update()
 	XMStoreFloat4x4(&_teapotObjConstantBufferData.modelMatrix, modelMatrix);
 	XMStoreFloat4x4(&_teapotObjConstantBufferData.invTranspose, invTranspose);
 
-	translation = XMMatrixTranslation(0.0f, 0.4f, 0.0f);
+
+	translation = XMMatrixTranslation(0.0f, 0.5f, 0.0f);
 	modelMatrix = XMMatrixIdentity() * translation;
 	invTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, modelMatrix));
 
@@ -516,6 +555,10 @@ void D3D11Application::Update()
 	_deviceContext->Map(_perFrameConstantBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	memcpy(mappedResource.pData, &_perFrameConstantBufferData, sizeof(PerFrameConstantBuffer));
 	_deviceContext->Unmap(_perFrameConstantBuffer.Get(), 0);
+
+	_deviceContext->Map(_refFrameConstantBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+	memcpy(mappedResource.pData, &_refFrameConstantBufferData, sizeof(PerFrameConstantBuffer));
+	_deviceContext->Unmap(_refFrameConstantBuffer.Get(), 0);
 
 	_deviceContext->Map(_teapotObjConstantBuffer.Get(), 0, D3D11_MAP::D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
 	memcpy(mappedResource.pData, &_teapotObjConstantBufferData, sizeof(PerObjectConstantBuffer));
@@ -543,33 +586,62 @@ void D3D11Application::Render()
 	};
 
 	constexpr float clearColor[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-	UINT stride = sizeof(DirectX::VertexPosition);
+	constexpr float clearTeapotTargetColor[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	UINT stride = sizeof(VertexType);
 	constexpr UINT vertexOffset = 0;
 	ID3D11RenderTargetView* nullTarget = nullptr;
 
-	ID3D11Buffer* constantBuffers[4] =
+	ID3D11Buffer* constantBuffers[6] =
 	{
 		_perFrameConstantBuffer.Get(),
-		_teapotObjConstantBuffer.Get(),
 		_lightConstantBuffer.Get(),
-		_quadObjConstantBuffer.Get()
+		_teapotObjConstantBuffer.Get(),
+		_quadObjConstantBuffer.Get(),
+		_refFrameConstantBuffer.Get()
 	};
 
 	ImGui::Render();
 
+	// render teapot to texture
 	_deviceContext->OMSetRenderTargets(1, &nullTarget, nullptr);
-	_deviceContext->ClearRenderTargetView(_renderTarget.Get(), clearColor);
+	_deviceContext->OMSetRenderTargets(1, _renderTextureView.GetAddressOf(), _depthTarget.Get());
+	_deviceContext->ClearRenderTargetView(_renderTextureView.Get(), clearTeapotTargetColor);
 	_deviceContext->ClearDepthStencilView(_depthTarget.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	_deviceContext->OMSetRenderTargets(1, _renderTarget.GetAddressOf(), _depthTarget.Get());
+	
 
 	_deviceContext->RSSetViewports(1, &viewport);
 	_deviceContext->RSSetState(_rasterState.Get());
-	_deviceContext->OMSetDepthStencilState(_depthLessState.Get(), 0); //disable depth writing
+	_deviceContext->OMSetDepthStencilState(_depthState.Get(), 0); //enable depth writing
 
 	_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	
+	_deviceContext->IASetVertexBuffers(0, 1, _teapotVertexBuffer.GetAddressOf(), &stride, &vertexOffset);
+	_refTeapotShaderCollection.ApplyToContext(_deviceContext.Get());
+
+
+	_deviceContext->PSSetShaderResources(0, 1, _skyMapSRV.GetAddressOf());
+	_deviceContext->PSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
+
+
+	_deviceContext->VSSetConstantBuffers(0, 1, &constantBuffers[4]);
+	_deviceContext->VSSetConstantBuffers(1, 2, &constantBuffers[1]);
+
+
+	_deviceContext->Draw(_drawCount, 0);
+
+	// render to main back buffer
+	_deviceContext->OMSetRenderTargets(1, _renderTarget.GetAddressOf(), _depthTarget.Get());
+	_deviceContext->ClearRenderTargetView(_renderTarget.Get(), clearColor);
+	_deviceContext->ClearDepthStencilView(_depthTarget.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	_deviceContext->OMSetDepthStencilState(_depthLessState.Get(), 0); //disable depth writing
+
+	
 
 	//prepare and render skybox
+	stride = sizeof(DirectX::VertexPosition);
+
 	_deviceContext->IASetVertexBuffers(0, 1, _skyVertexBuffer.GetAddressOf(), &stride, &vertexOffset);
 	_deviceContext->IASetIndexBuffer(_skyIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
@@ -595,7 +667,8 @@ void D3D11Application::Render()
 	_deviceContext->PSSetShaderResources(0, 1, _skyMapSRV.GetAddressOf());
 	_deviceContext->PSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
 
-	_deviceContext->VSSetConstantBuffers(0, 3, constantBuffers);
+	_deviceContext->VSSetConstantBuffers(0, 1, &constantBuffers[0]);
+	_deviceContext->VSSetConstantBuffers(1, 2, &constantBuffers[1]);
 
 
 	_deviceContext->Draw(_drawCount, 0);
@@ -612,8 +685,8 @@ void D3D11Application::Render()
 	_deviceContext->PSSetShaderResources(1, 1, _textureResourceView.GetAddressOf());
 	_deviceContext->PSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
 
-	_deviceContext->VSSetConstantBuffers(0, 1, &constantBuffers[0]);
-	_deviceContext->VSSetConstantBuffers(1, 2, &constantBuffers[2]);
+	_deviceContext->VSSetConstantBuffers(0, 2, &constantBuffers[0]);
+	_deviceContext->VSSetConstantBuffers(2, 1, &constantBuffers[3]);
 
 	_deviceContext->DrawIndexed(6, 0, 0);
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());

@@ -17,6 +17,7 @@ struct ImGuiMenuData
 	bool showMenu = true;
 	float potRotX = 0;
 	float potRotY = 0;
+	float camPos[3] = {};
 };
 
 class ImGuiMenu

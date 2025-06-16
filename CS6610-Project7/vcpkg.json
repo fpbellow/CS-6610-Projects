@@ -1,0 +1,13 @@
+{
+  "dependencies": [
+    "glfw3",
+    "directxtk",
+    {
+      "name": "imgui",
+      "features": [
+        "glfw-binding",
+        "dx11-binding"
+      ]
+    }
+  ]
+}

@@ -16,27 +16,32 @@ struct VSOutput
 
 cbuffer PerFrame : register(b0)
 {
-    matrix viewprojection;
+    matrix view;
+    matrix projection;
     float4 viewPos;
 };
 
-cbuffer PerObject : register(b1)
-{
-    matrix modelmatrix;
-    matrix invTranspose;
-};
-
-cbuffer Light : register(b2)
+cbuffer Light : register(b1)
 {
     float4 lightPos;
     float4 lightColor;
 };
 
+cbuffer PerObject : register(b2)
+{
+    matrix modelmatrix;
+    matrix invTranspose;
+};
+
+
+
 VSOutput Main(VSInput input)
 {
     VSOutput output = (VSOutput) 0;
-    matrix world = mul(viewprojection, modelmatrix);
+    matrix viewprojection = mul(projection, view);
+    
     float4 vPos = float4(input.position * 0.05, 1.0);
+    float4 world = mul(modelmatrix,vPos);
     
     output.normal = normalize(mul(invTranspose, float4(input.normal, 0.0)).xyz);
     
@@ -46,6 +51,6 @@ VSOutput Main(VSInput input)
     output.lightDir = normalize(lightPos.xyz - vPos.xyz);
     output.lightCol = lightColor.xyz;
     
-    output.position = mul(world, vPos);
+    output.position = mul(viewprojection, world);
     return output;
 }

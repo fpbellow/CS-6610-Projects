@@ -77,7 +77,8 @@ void InputHandler::mouseCursorCallback(GLFWwindow* window, double xposin, double
 		mouseYStart = ypos;
 		camX -= xOffset * 0.01f;
 		camY -= yOffset * 0.01f;
-		camY = std::clamp(camY, -DirectX::XM_PIDIV2 + 0.01f, DirectX::XM_PIDIV2 - 0.01f);
+		float maxPitch = DirectX::XM_PIDIV2 - atan2(0.5f, InputHandler::camDistance) - 0.01f;
+		camY = std::clamp(camY, -maxPitch, maxPitch);
 	}
 } 
 

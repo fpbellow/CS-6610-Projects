@@ -18,8 +18,10 @@ struct VSOutput
 
 cbuffer PerFrame : register(b0)
 {
-    matrix viewprojection;
+    matrix view;
+    matrix projection;
     float4 viewPos;
+    float4 aspectRatio;
 };
 
 cbuffer Light : register(b1)
@@ -37,18 +39,23 @@ cbuffer PerObject : register(b2)
 VSOutput Main(VSInput input)
 {
     VSOutput output = (VSOutput) 0;
-    matrix world = mul(viewprojection, modelmatrix);
+    matrix viewprojection = mul(projection, view);
+    
     float4 vPos = float4(input.position, 1.0);
+    float4 world = mul(modelmatrix, vPos);
     
     output.normal = normalize(mul(invTranspose, float4(input.normal, 0.0)).xyz);
-    output.Texture = input.Texture;
     
+
+    float uOffset = (1.0 - aspectRatio.a) * 0.5f;
+    output.Texture = float2(input.Texture.x * aspectRatio.a + uOffset, input.Texture.y);
+ 
     output.viewDir = normalize(viewPos.xyz - vPos.xyz);
     output.reflectedVec = reflect(-output.viewDir, output.normal);
     
     output.lightDir = normalize(lightPos.xyz - vPos.xyz);
     output.lightCol = lightColor.xyz;
     
-    output.position = mul(world, vPos);
+    output.position = mul(viewprojection, world);
     return output;
 }

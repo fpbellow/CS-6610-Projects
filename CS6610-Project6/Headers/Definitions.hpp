@@ -7,8 +7,10 @@ namespace WRL = Microsoft::WRL;
 
 struct PerFrameConstantBuffer
 {
-	DirectX::XMFLOAT4X4 viewProjectionMatrix;
+	DirectX::XMFLOAT4X4 viewMatrix;
+	DirectX::XMFLOAT4X4 projectionMatrix;
 	DirectX::XMFLOAT4 viewPos;
+	DirectX::XMFLOAT4 aspectRatio; //width, height, ratio, widthScale
 };
 
 struct PerObjectConstantBuffer

@@ -35,7 +35,11 @@ void ImGuiMenu::Update(ImGuiMenuData menuData)
 		ImGui::Text("\n");
 		ImGui::Text("Teapot X Rotation: %f", menuData.potRotX);
 		ImGui::Text("Teapot Y Rotation: %f", menuData.potRotY);
-
+		ImGui::Text("\n");
+		ImGui::Text("CamPos X: %f", menuData.camPos[0]);
+		ImGui::Text("CamPos Y: %f", menuData.camPos[1]);
+		ImGui::Text("CamPos Z: %f", menuData.camPos[2]);
+	
 
 		
 		ImGui::End();

@@ -60,6 +60,7 @@ private:
 	WRL::ComPtr<ID3D11Buffer> _quadIndexBuffer = nullptr;
 
 	WRL::ComPtr<ID3D11Buffer> _perFrameConstantBuffer = nullptr;
+	WRL::ComPtr<ID3D11Buffer> _refFrameConstantBuffer = nullptr;
 	WRL::ComPtr<ID3D11Buffer> _teapotObjConstantBuffer = nullptr;
 	WRL::ComPtr<ID3D11Buffer> _quadObjConstantBuffer = nullptr;
 	WRL::ComPtr<ID3D11Buffer> _lightConstantBuffer = nullptr;
@@ -77,6 +78,7 @@ private:
 	WRL::ComPtr<ID3D11ShaderResourceView> _skyMapSRV = nullptr;
 
 	PerFrameConstantBuffer _perFrameConstantBufferData{};
+	PerFrameConstantBuffer _refFrameConstantBufferData{};
 	PerObjectConstantBuffer _teapotObjConstantBufferData{};
 	PerObjectConstantBuffer _quadObjConstantBufferData{};
 	LightConstantBuffer _lightConstantBufferData{};
@@ -84,6 +86,7 @@ private:
 
 
 	ShaderCollection _teapotShaderCollection;
+	ShaderCollection _refTeapotShaderCollection;
 	ShaderCollection _skyShaderCollection;
 	ShaderCollection _quadShaderCollection;
 

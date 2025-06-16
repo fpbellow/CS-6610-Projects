@@ -12,7 +12,8 @@ struct VSOutput
 
 cbuffer PerFrame : register(b0)
 {
-    matrix viewprojection;
+    matrix view;
+    matrix projection;
     float4 viewPos;
 };
 
@@ -20,6 +21,7 @@ cbuffer PerFrame : register(b0)
 VSOutput Main(VSInput input)
 {
     VSOutput output = (VSOutput) 0;
+    matrix viewprojection = mul(projection, view);
     output.position = mul(viewprojection, float4(input.position + viewPos.xyz, 1.0));
     output.Texture = input.position;
     return output;

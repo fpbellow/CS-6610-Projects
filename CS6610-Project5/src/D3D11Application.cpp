@@ -31,6 +31,9 @@ D3D11Application::~D3D11Application()
 	_renTexPObjectCBuffer.Reset();
 	_renTexLightCBuffer.Reset();
 	_renTexMaterialCBuffer.Reset();
+	_renderTexture.Reset();
+	_quadPFrameCBuffer.Reset();
+	_quadPObjectCBuffer.Reset();
 	_shaderCollection.Destroy();
 	_renderTexShaderCollection.Destroy();
 	DestroySwapchainResources();
@@ -317,10 +320,10 @@ bool D3D11Application::Load()
 	_shaderCollection = ShaderCollection::CreateShaderCollection(shaderDescriptor, _device.Get());
 
 	std::vector<VertexPositionTexture> quad_vertices = {
-		{ XMFLOAT3(-0.5f,  0.5f, 0.0f), XMFLOAT2( 0.0, 0.0 )},
-		{ XMFLOAT3( 0.5f,  0.5f, 0.0f), XMFLOAT2( 1.0, 0.0 )},
-		{ XMFLOAT3(-0.5f, -0.5f, 0.0f), XMFLOAT2( 0.0, 1.0 )},
-		{ XMFLOAT3( 0.5f, -0.5f, 0.0f), XMFLOAT2( 1.0, 1.0 )}
+		{ XMFLOAT3(-0.85f,  0.5f, 0.0f), XMFLOAT2( 0.0, 0.0 )},
+		{ XMFLOAT3( 0.85f,  0.5f, 0.0f), XMFLOAT2( 1.0, 0.0 )},
+		{ XMFLOAT3(-0.85f, -0.5f, 0.0f), XMFLOAT2( 0.0, 1.0 )},
+		{ XMFLOAT3( 0.85f, -0.5f, 0.0f), XMFLOAT2( 1.0, 1.0 )}
 	};
 
 	D3D11_BUFFER_DESC bufferInfo = {};
@@ -344,6 +347,7 @@ bool D3D11Application::Load()
 void D3D11Application::CleanUp()
 {
 	Application::CleanUp();
+	ImGuiMenu::CleanUp();
 
 }
 

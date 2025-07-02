@@ -22,25 +22,19 @@ void ImGuiMenu::Update(ImGuiMenuData menuData)
 
 	if (menuData.showMenu)
 	{
-		ImGui::Begin("CS6610 - Project 6");
+		ImGui::Begin("CS6610 - Project 7");
 		ImGui::Text("Obj File: %s", menuData.objFile.c_str());
 		
 		ImGui::Text("Number of Vertices: %u", menuData.numVertices);
 		ImGui::Separator();
 		ImGui::Text("\n");
 		ImGui::Text("Press F1 to Open/Hide Menu.");
-		ImGui::Text("Hold Left Click to rotate object.");
 		ImGui::Text("Hold Right Click to rotate camera.");
 		ImGui::Separator();
-		ImGui::Text("\n");
-		ImGui::Text("Teapot X Rotation: %f", menuData.potRotX);
-		ImGui::Text("Teapot Y Rotation: %f", menuData.potRotY);
 		ImGui::Text("\n");
 		ImGui::Text("CamPos X: %f", menuData.camPos[0]);
 		ImGui::Text("CamPos Y: %f", menuData.camPos[1]);
 		ImGui::Text("CamPos Z: %f", menuData.camPos[2]);
-	
-
 		
 		ImGui::End();
 	}

@@ -3,7 +3,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../Headers/tiny_obj_loader.h"
 
-bool LoadOBJ(const std::string& filename, std::vector<DirectX::VertexPositionNormalTexture>& vertices, std::vector<Material>& materials, ID3D11Device* device)
+bool LoadOBJ(const std::string& filename, std::vector<DirectX::VertexPositionNormalTexture>& vertices, ID3D11Device* device)
 {
 	tinyobj::ObjReaderConfig reader_config;
 	tinyobj::ObjReader reader;
@@ -20,7 +20,7 @@ bool LoadOBJ(const std::string& filename, std::vector<DirectX::VertexPositionNor
 
 	auto& attrib = reader.GetAttrib();
 	auto& shapes = reader.GetShapes();
-	auto& mats = reader.GetMaterials();
+	//auto& mats = reader.GetMaterials();
 
 	//load vertex data
 	for (const auto& shape : shapes)
@@ -60,51 +60,6 @@ bool LoadOBJ(const std::string& filename, std::vector<DirectX::VertexPositionNor
 
 			vertices.push_back(vertex);
 		}
-	}
-
-	//load material data (if any)
-	if (!mats.empty())
-	{
-		std::string folderPath = std::filesystem::path(filename).parent_path().string();
-
-		for (const auto& mat : mats)
-		{
-			Material material;
-			material.name = mat.name;
-			material.diffuse = DirectX::XMFLOAT3(
-				mat.diffuse[0],
-				mat.diffuse[1],
-				mat.diffuse[2]
-			);
-			material.specular = DirectX::XMFLOAT3(
-				mat.specular[0],
-				mat.specular[1],
-				mat.specular[2]
-			);
-			material.shininess = mat.shininess;
-
-			//Load texture maps if available
-			if (!mat.diffuse_texname.empty())
-				material.diffuseTexture = CreateTextureView(device, folderPath + "/" + mat.diffuse_texname);
-
-			if (!mat.specular_texname.empty())
-				material.specularTexture = CreateTextureView(device, folderPath + "/" + mat.specular_texname);
-
-			materials.push_back(material);
-		}
-	}
-	else
-	{
-		Material defaultMaterial;
-		defaultMaterial.name = "Default";
-		defaultMaterial.diffuse = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f);
-		defaultMaterial.specular = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-		defaultMaterial.shininess = 0.0f;
-		defaultMaterial.diffuseTexture = nullptr;
-		defaultMaterial.specularTexture = nullptr;
-		materials.push_back(defaultMaterial);
-
-		std::cerr << "LoadObj: No materials found. Using default material";
 	}
 
 	return true;

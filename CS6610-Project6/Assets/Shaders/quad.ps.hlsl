@@ -40,7 +40,7 @@ PSOutput Main(PSInput input)
     float4 potReflect = reflectedTexture.Sample(samplerState, input.Texture);
     
     float3 result = potReflect.rgb != float3(0.0, 0.0, 0.0) ? potReflect.rgb : envReflect.rgb;
-    //float fresnel = pow(1.0 - dot(input.viewDir, input.normal), 3.0);
-    output.color = lerp(float4(lighting * 0.1, 1.0f), float4(result, 1.0f), 0.7f);
+
+    output.color = lerp(float4(lighting * 0.4, 1.0f), float4(result, 1.0f), 0.7f);
     return output;
 }

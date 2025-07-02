@@ -22,7 +22,7 @@ struct Material
 };
 
 
-bool LoadOBJ(const std::string& filename, std::vector<DirectX::VertexPositionNormalTexture>& vertices, std::vector<Material>& materials, ID3D11Device* device);
+bool LoadOBJ(const std::string& filename, std::vector<DirectX::VertexPositionNormalTexture>& vertices, ID3D11Device* device);
 
 WRL::ComPtr<ID3D11ShaderResourceView> CreateTextureView(ID3D11Device* device, const std::string& pathToTexture);
 WRL::ComPtr<ID3D11ShaderResourceView> CreateCubeView(ID3D11Device* device, const std::string& folderPath);

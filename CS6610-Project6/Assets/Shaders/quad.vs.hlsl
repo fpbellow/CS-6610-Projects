@@ -49,6 +49,7 @@ VSOutput Main(VSInput input)
 
     float uOffset = (1.0 - aspectRatio.a) * 0.5f;
     output.Texture = float2(input.Texture.x * aspectRatio.a + uOffset, input.Texture.y);
+    
  
     output.viewDir = normalize(viewPos.xyz - vPos.xyz);
     output.reflectedVec = reflect(-output.viewDir, output.normal);

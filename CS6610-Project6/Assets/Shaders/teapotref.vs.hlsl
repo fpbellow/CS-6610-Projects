@@ -41,7 +41,7 @@ VSOutput Main(VSInput input)
     VSOutput output = (VSOutput) 0;
     matrix viewprojection = mul(projection, view);
     
-    float4 vPos = float4(input.position * 0.05, 1.0);
+    float4 vPos = float4(input.position * 0.1, 1.0);
     float4 world = mul(modelmatrix, vPos);
     
     

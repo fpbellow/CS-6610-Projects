@@ -19,6 +19,7 @@ struct ImGuiMenuData
 	float potRotY = 0;
 	float camPos[3] = {};
 	float tessFactor = 0;
+	float displaceFactor = 0;
 };
 
 class ImGuiMenu

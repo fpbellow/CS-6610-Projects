@@ -12,8 +12,6 @@ struct VS_OUTPUT
     float2 Texture : TEXCOORD0;
 };
 
-Texture2D displacementMap : register(t0);
-SamplerState linearSampler : register(s0);
 
 VS_OUTPUT Main(VS_INPUT input)
 {

@@ -14,7 +14,8 @@ public:
 	static float camY;
 	static float camDistance;
 	static float tessFactor;
-	static int tessIter;
+	static float displacementFactor;
+	
 	static bool toggleTriangulation;
 
 	static void Initialize(float x, float y, float camDist);
@@ -30,4 +31,6 @@ private:
 	static bool cursorLock;
 	static float mouseXStart;
 	static float mouseYStart;
+	static int tessIter;
+	static int displacementIter;
 };

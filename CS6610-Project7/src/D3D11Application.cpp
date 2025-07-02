@@ -28,7 +28,20 @@ D3D11Application::~D3D11Application()
 	_teapotVertexBuffer.Reset();
 	_perFrameConstantBuffer.Reset();
 	_teapotObjConstantBuffer.Reset();
+	_quadObjConstantBuffer.Reset();
+	_lightConstantBuffer.Reset();
 	_rasterState.Reset();
+	_renderTarget.Reset();
+	_depthTarget.Reset();
+	_depthState.Reset();
+	_shadowMap.Reset();
+	_shadowDSV.Reset();
+	_shadowSRV.Reset();
+	_shadowRasterState.Reset();
+	_comparisonSampleState.Reset();
+	_linearSamplerState.Reset();
+	_quadVertexBuffer.Reset();
+	_quadIndexBuffer.Reset();
 	_shaderCollection.Destroy();
 	DestroySwapchainResources();
 	_swapChain.Reset();
@@ -492,7 +505,7 @@ void D3D11Application::Update()
 
 	_scale = 1.0f;
 	XMMATRIX quadScale = XMMatrixScaling(_scale * 2.0f, _scale, _scale * 2.0f);
-	translation = XMMatrixTranslation(0.0f, 0.5f, 0.0f);
+	translation = XMMatrixTranslation(0.0f, 0.75f, 0.0f);
 	modelMatrix = XMMatrixIdentity() * translation;
 	invTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, modelMatrix));
 

@@ -348,8 +348,7 @@ bool D3D11Application::Load()
 	
 	_menuData.objFile = "../Assets/Models/teapot/teapot.obj";
 	std::vector<VertexType> vertices;
-	std::vector<Material> materials;
-	if (!LoadOBJ(_menuData.objFile, vertices, materials, _device.Get()))
+	if (!LoadOBJ(_menuData.objFile, vertices, _device.Get()))
 	{
 		std::cerr << "ModelLoad: Failed to load obj file. \n";
 	}
@@ -369,20 +368,7 @@ bool D3D11Application::Load()
 		return false;
 	}
 
-	_materials = materials;
 
-	_fallbackTextureSrv = CreateTextureView(_device.Get(), "../Assets/Textures/default.png");
-	assert(_fallbackTextureSrv != nullptr);
-
-	if (_materials[0].diffuseTexture == nullptr)
-		_materials[0].diffuseTexture = _fallbackTextureSrv;
-
-	if (_materials[0].specularTexture == nullptr)
-		_materials[0].specularTexture = _fallbackTextureSrv;
-
-	_lightConstantBufferData.lightColor = DirectX::XMFLOAT4(materials[0].specular.x, materials[0].specular.y, materials[0].specular.z, 1.0f);
-
-	_materialConstantBufferData.materialColor = materials[0].diffuse;
 	_materialConstantBufferData.shininess = 32;
 
 	D3D11_SAMPLER_DESC linearSamplerStateDescriptor = {};
@@ -409,10 +395,10 @@ bool D3D11Application::Load()
 	_quadShaderCollection = ShaderCollection::CreateShaderCollection(shaderDescriptor, _device.Get());
 
 	std::vector<VertexType> qVertices = {
-		{XMFLOAT3(-1.0f,  -1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f)}, //0
-		{XMFLOAT3(-1.0f,  -1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f)}, //1
-		{XMFLOAT3( 1.0f,  -1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f)}, //2
-		{XMFLOAT3( 1.0f,  -1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f)}, //3
+		{XMFLOAT3(-1.0f,  -1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 1.0f)}, //0
+		{XMFLOAT3(-1.0f,  -1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(1.0f, 0.0f)}, //1
+		{XMFLOAT3( 1.0f,  -1.0f, -1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 0.0f)}, //2
+		{XMFLOAT3( 1.0f,  -1.0f,  1.0f), XMFLOAT3(0.0f, 1.0f, 0.0f), XMFLOAT2(0.0f, 1.0f)}, //3
 	};
 
 	constexpr uint32_t qIndices[] =
@@ -463,22 +449,26 @@ void D3D11Application::Update()
 
 	static float _scale = 1.0f;
 
-	XMFLOAT3 _cameraPosition = { 0.0f, 0.5f, InputHandler::camDistance };
-	
+	float radius = InputHandler::camDistance;        // Orbit distance from focus point
+	float yaw = InputHandler::camX;                  // Horizontal angle (in radians)
+	float pitch = -InputHandler::camY;
 	
 	//camera configuration + view and proj matrices
-	XMVECTOR camPos = XMLoadFloat3(&_cameraPosition);
-	
-	XMVECTOR camYaw = XMQuaternionRotationAxis({ 0, 1, 0 }, InputHandler::camX);
-	XMVECTOR camPitch = XMQuaternionRotationAxis({ 1, 0, 0 }, InputHandler::camY);
-	XMVECTOR camRotate = XMQuaternionMultiply(camPitch, camYaw);
+	XMFLOAT3 target = { 0.0f, 0.5f, 0.0f };          // Point to orbit around (e.g., the object or scene center)
 
-	camPos = XMVector3Rotate(camPos, camRotate);
+	// Calculate camera position in world space
+	XMFLOAT3 camPosFloat = {
+		target.x + radius * cosf(pitch) * sinf(yaw),
+		target.y + radius * sinf(pitch),
+		target.z + radius * cosf(pitch) * cosf(yaw)
+	};
+	XMVECTOR camPos = XMLoadFloat3(&camPosFloat);
+
 	_menuData.camPos[0] = XMVectorGetX(camPos);
 	_menuData.camPos[1] = XMVectorGetY(camPos);
 	_menuData.camPos[2] = XMVectorGetZ(camPos);
 
-	XMVECTOR focusPos = { 0, _cameraPosition.y, 0, 0 };
+	XMVECTOR focusPos = XMLoadFloat3(&target);
 	XMVECTOR upDir = { 0,1,0,0 };
 
 	XMMATRIX view = XMMatrixLookAtRH(camPos, focusPos, upDir);
@@ -491,19 +481,16 @@ void D3D11Application::Update()
 
 
 
-	XMVECTOR plane = XMVectorSet(0, 1, 0, 0);  // Assuming plane y = 0
+	XMVECTOR plane = XMVectorSet(0, 1.0f, 0, 0.5f);  // Assuming plane y = 0.5f
 	XMMATRIX reflectionMatrix = XMMatrixReflect(plane);
 
 
-	XMVECTOR refCamPos = { XMVectorGetX(camPos ), XMVectorGetY(camPos), -XMVectorGetZ(camPos)};
+	XMVECTOR refCamPos = XMVector3TransformCoord(camPos, reflectionMatrix);
 
-	refCamPos = XMVector3TransformCoord(refCamPos, reflectionMatrix);
-	refCamPos = XMVector3Rotate(refCamPos, camRotate);
+	XMVECTOR refUpDir = XMVector3TransformNormal(upDir, reflectionMatrix);
 
-	XMVECTOR refFocusPos = XMVector3TransformCoord(focusPos, reflectionMatrix);
-	XMVECTOR refUpDir = XMVector3TransformCoord(upDir, reflectionMatrix);
+	XMMATRIX refView = XMMatrixLookAtRH(refCamPos, focusPos, refUpDir);
 
-	XMMATRIX refView = XMMatrixLookAtRH(refCamPos, refFocusPos, refUpDir);
 
 	XMStoreFloat4x4(&_refFrameConstantBufferData.viewMatrix, refView);
 	XMStoreFloat4x4(&_refFrameConstantBufferData.projectionMatrix, proj);

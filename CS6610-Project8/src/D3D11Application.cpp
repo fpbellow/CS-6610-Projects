@@ -379,17 +379,17 @@ bool D3D11Application::Load()
 	}
 
 	//shadow shaders
-	shaderDescriptor.VertexShaderFilePath = L"../Assets/Shaders/shadow.vs.hlsl";
+	shaderDescriptor.VertexShaderFilePath = L"../Assets/Shaders/main.vs.hlsl";
 	shaderDescriptor.PixelShaderFilePath = L"../Assets/Shaders/shadow.ps.hlsl";
+	shaderDescriptor.GeometryShaderFilePath.clear();
+	shaderDescriptor.HullShaderFilePath = L"../Assets/Shaders/main.hs.hlsl";
+	shaderDescriptor.DomainShaderFilePath = L"../Assets/Shaders/shadow.ds.hlsl";
 
 	_shadowShaderCollection = ShaderCollection::CreateShaderCollection(shaderDescriptor, _device.Get());
 
 
 	//main shaders 
-	shaderDescriptor.VertexShaderFilePath = L"../Assets/Shaders/main.vs.hlsl";
 	shaderDescriptor.PixelShaderFilePath = L"../Assets/Shaders/main.ps.hlsl";
-	shaderDescriptor.GeometryShaderFilePath.clear();
-	shaderDescriptor.HullShaderFilePath = L"../Assets/Shaders/main.hs.hlsl";
 	shaderDescriptor.DomainShaderFilePath = L"../Assets/Shaders/main.ds.hlsl";
 
 	_shaderCollection = ShaderCollection::CreateShaderCollection(shaderDescriptor, _device.Get());
@@ -421,8 +421,10 @@ void D3D11Application::Update()
 
 	XMFLOAT3 _cameraPosition = { 0.0f, 0.5f, InputHandler::camDistance };
 	
-	_tessellationConstantBufferData.tessellationFactor = { InputHandler::tessFactor, 0.0f, 0.0f, 0.0f };
+	_tessellationConstantBufferData.tessellationFactor = { InputHandler::tessFactor, InputHandler::displacementFactor , 0.0f, 0.0f };
 	_menuData.tessFactor = InputHandler::tessFactor;
+	_menuData.displaceFactor = InputHandler::displacementFactor;
+
 
 	//camera configuration + view and proj matrices
 	XMVECTOR camPos = XMLoadFloat3(&_cameraPosition);
@@ -448,7 +450,7 @@ void D3D11Application::Update()
 	
 	_perFrameConstantBufferData.viewPos = XMFLOAT4(XMVectorGetX(camPos), XMVectorGetY(camPos), XMVectorGetZ(camPos), 1.0);
 
-	XMFLOAT3 lightPosition = XMFLOAT3(1.0f, 2.5f, 2.0f);
+	XMFLOAT3 lightPosition = XMFLOAT3(1.0f, 0.45f, 2.5f);
 	XMFLOAT3 lightColor = XMFLOAT3(1.0, 1.0, 1.0);
 
 	_lightConstantBufferData.lightPos = XMFLOAT4(lightPosition.x, lightPosition.y, lightPosition.z, 1.0);
@@ -543,21 +545,25 @@ void D3D11Application::Render()
 	_deviceContext->ClearRenderTargetView(_renderTarget.Get(), clearColor);
 	_deviceContext->ClearDepthStencilView(_shadowDSV.Get(), D3D11_CLEAR_FLAG::D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-	_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
 
 	_deviceContext->OMSetRenderTargets(0, nullptr, _shadowDSV.Get());
 	
 	_deviceContext->RSSetState(_shadowRasterState.Get());
 	_deviceContext->RSSetViewports(1, &shadowViewport);
 	
-	
 	_deviceContext->OMSetDepthStencilState(_depthState.Get(), 0); //enable depth writing
 
 	_shadowShaderCollection.ApplyToContext(_deviceContext.Get());
 
+	_deviceContext->IASetVertexBuffers(0, 1, _quadVertexBuffer.GetAddressOf(), &stride, &vertexOffset);
+	_deviceContext->IASetIndexBuffer(_quadIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-
-
+	_deviceContext->HSSetConstantBuffers(0, 1, &constantBuffers[3]);
+	_deviceContext->DSSetConstantBuffers(0, 4, constantBuffers);
+	_deviceContext->DSSetShaderResources(0, 1, _displacementMap.GetAddressOf());
+	_deviceContext->Draw(4, 0);
 
 
 	// render to main back buffer
@@ -566,40 +572,19 @@ void D3D11Application::Render()
 	_deviceContext->RSSetViewports(1, &viewport);
 	_deviceContext->RSSetState(_rasterState.Get());
 
-	//render quad (normal)
-	/*
-	_shaderCollection.ApplyToContext(_deviceContext.Get());
 
-	_deviceContext->IASetVertexBuffers(0, 1, _quadVertexBuffer.GetAddressOf(), &stride, &vertexOffset);
-	_deviceContext->IASetIndexBuffer(_quadIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
-
-
-	_deviceContext->VSSetConstantBuffers(0, 3, constantBuffers);
-
-	_deviceContext->PSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
-	_deviceContext->PSSetShaderResources(0, 1, _normalMap.GetAddressOf());
-
-	_deviceContext->PSSetSamplers(1, 1, _comparisonSampleState.GetAddressOf());
-	_deviceContext->PSSetShaderResources(1, 1, _shadowSRV.GetAddressOf());
-
-	_deviceContext->DrawIndexed(6, 0, 0);
-	*/
-
-	/////////
 	//render quad (displace)
 	
 	_shaderCollection.ApplyToContext(_deviceContext.Get());
-	_deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_4_CONTROL_POINT_PATCHLIST);
 
-	_deviceContext->IASetVertexBuffers(0, 1, _quadVertexBuffer.GetAddressOf(), &stride, &vertexOffset);
-	_deviceContext->IASetIndexBuffer(_quadIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
+
 
 	_deviceContext->HSSetConstantBuffers(0, 1, &constantBuffers[3]);
-	_deviceContext->DSSetConstantBuffers(0, 3, constantBuffers);
+	_deviceContext->DSSetConstantBuffers(0, 4, constantBuffers);
 
 
 	//_deviceContext->DSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
-	//_deviceContext->DSSetShaderResources(0, 1, _displacementMap.GetAddressOf());
+	_deviceContext->DSSetShaderResources(0, 1, _displacementMap.GetAddressOf());
 
 	_deviceContext->PSSetSamplers(0, 1, _linearSamplerState.GetAddressOf());
 	_deviceContext->PSSetShaderResources(0, 1, _normalMap.GetAddressOf());

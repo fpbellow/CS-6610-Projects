@@ -4,12 +4,12 @@ float InputHandler::xRotation = 0;
 float InputHandler::yRotation = 0;
 float InputHandler::camX = 0;
 float InputHandler::camY = 0;
-float InputHandler::camDistance = 1.0;
+float InputHandler::camDistance = 1.0f;
 
 
 float InputHandler::quadRotX = 0;
 float InputHandler::quadRotY = 0;
-float InputHandler::quadCamDist = 1.0;
+float InputHandler::quadCamDist = 1.15f;
 
 
 bool InputHandler::cursorLock = false;
@@ -103,8 +103,11 @@ void InputHandler::mouseCursorCallback(GLFWwindow* window, double xposin, double
 void InputHandler::mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	float yOff = static_cast<float>(yoffset);
-	if ((yOff < 0 && camDistance < 4.9) || (yOff > 0 && camDistance > 0.1))
+	if (modKey == false && ((yOff < 0 && camDistance < 4.9f) || (yOff > 0 && camDistance > 0.1f)))
 		camDistance -= yOff * 0.1f;
+
+	else if (modKey == true && ((yOff < 0 && quadCamDist < 4.9f) || (yOff > 0 && quadCamDist > 1.15f)))
+		quadCamDist -= yOff * 0.1f;
 
 }
 

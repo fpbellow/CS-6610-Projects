@@ -30,8 +30,10 @@ void ImGuiMenu::Update(ImGuiMenuData menuData)
 		ImGui::Text("\n");
 		ImGui::Text("Press F1 to Open/Hide Menu.");
 		ImGui::Text("Hold Left Click to rotate object.");
-		ImGui::Text("Hold Right Click to rotate camera.");
+		ImGui::Text("Hold Right Click to rotate camera around object.");
+		ImGui::Text("Scroll wheel to zoom in and out on the object.");
 		ImGui::Text("Hold Left Ctrl with LMB to rotate quad.");
+		ImGui::Text("Hold Left Ctrl with scroll to zoom quad in/out.");
 		
 
 

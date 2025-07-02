@@ -10,8 +10,10 @@ bool InputHandler::moveCam = false;
 bool InputHandler::toggleGuiMenu = true;
 float InputHandler::mouseXStart = 0;
 float InputHandler::mouseYStart = 0;
-float InputHandler::tessFactor = 64.0f;
-int InputHandler::tessIter = 4;
+float InputHandler::tessFactor = 256.0f;
+float InputHandler::displacementFactor = 0.5f;
+int InputHandler::tessIter = 9;
+int InputHandler::displacementIter = 5;
 bool InputHandler::toggleTriangulation = false;
 
 
@@ -101,8 +103,8 @@ void InputHandler::keyCallback(GLFWwindow* window, int key, int scancode, int ac
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
 		toggleTriangulation = !toggleTriangulation;
 
-	float tessFactorOptions[5] = { 8.0f, 16.0f, 32.0f, 48.0f, 64.0f };
-	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS && tessIter < 4)
+	float tessFactorOptions[10] = { 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 48.0f, 64.0f, 128.0f, 256.0f };
+	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS && tessIter < 9)
 	{
 		tessIter += 1;
 		tessFactor = tessFactorOptions[tessIter];
@@ -112,5 +114,18 @@ void InputHandler::keyCallback(GLFWwindow* window, int key, int scancode, int ac
 	{
 		tessIter -= 1;
 		tessFactor = tessFactorOptions[tessIter];
+	}
+
+	float displaceFactorOptions[6] = { 0.0f, 0.1f , 0.2f, 0.3f, 0.4f, 0.5f };
+	if (key == GLFW_KEY_UP && action == GLFW_PRESS && displacementIter < 5)
+	{
+		displacementIter += 1;
+		displacementFactor = displaceFactorOptions[displacementIter];
+	}
+
+	if (key == GLFW_KEY_DOWN && action == GLFW_PRESS && displacementIter > 0)
+	{
+		displacementIter -= 1;
+		displacementFactor = displaceFactorOptions[displacementIter];
 	}
 }

@@ -31,10 +31,16 @@ PS_OUTPUT Main(PS_INPUT input)
     shadowTexCoords.y = 0.5f - (input.shadowCoord.y / input.shadowCoord.w * 0.5f);
     float pixelDepth = input.shadowCoord.z / input.shadowCoord.w;
     
-    float3 teapotNormal = normalMap.Sample(samLinear, input.Texture).xzy * 2.0f - 1.0f;
-
+    float3 N = normalize(input.normal);
+    float3 T = float3(1, 0, 0); // Tangent (U direction)
+    float3 B = float3(0, 0, -1); // Bitangent (V direction, might be (0,0,1) if your V increases up)
+    float3x3 TBN = float3x3(T, B, N);
+    
+    float3 tangentNormal = normalMap.Sample(samLinear, input.Texture).xyz * 2.0f - 1.0f;
+    float3 normalWS = normalize(mul(tangentNormal, TBN));
+    
     float shadow = 1;
-    float NdotL = dot(teapotNormal, input.lightDir);
+    float NdotL = dot(normalWS, input.lightDir);
     
     if ((saturate(shadowTexCoords.x) == shadowTexCoords.x) &&
         (saturate(shadowTexCoords.y) == shadowTexCoords.y) &&
@@ -55,7 +61,7 @@ PS_OUTPUT Main(PS_INPUT input)
     
     //Specular 
     float3 halfVec = normalize(input.lightDir + input.viewDir);
-    float3 specular = pow(max(dot(teapotNormal, halfVec), 0.0), 32.0f) * 1.0f;
+    float3 specular = pow(max(dot(normalWS, halfVec), 0.0), 32.0f) * 1.0f;
     
     float3 lighting = ambient + diffuse + specular;
     float3 shading = (1.0f - shadow) * ambient;

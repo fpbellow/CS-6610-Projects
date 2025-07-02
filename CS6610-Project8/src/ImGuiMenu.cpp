@@ -34,6 +34,8 @@ void ImGuiMenu::Update(ImGuiMenuData menuData)
 		ImGui::Text("\n");
 		ImGui::Text("Press Space to Show/Hide triangulation.");
 		ImGui::Text("Use Left/Right arrow keys to increase/decrease tessellation factor.");
+		ImGui::Text("Tessellation Factor: %f", menuData.tessFactor);
+		ImGui::Text("Displacement Factor: %f", menuData.displaceFactor);
 		ImGui::Separator();
 		ImGui::Text("\n");
 		ImGui::Text("CamPos X: %f", menuData.camPos[0]);

@@ -43,8 +43,14 @@ cbuffer PerObject : register(b2)
     matrix invTranspose;
 };
 
+cbuffer TessellationBuffer : register(b3)
+{
+    float4 tessellationFactor; //x is tessellation factor, y is displacement factor
+};
+
+
 Texture2D displacementMap : register(t0);
-SamplerState linearSampler : register(s0);
+
 
 [domain("quad")]
 DS_OUTPUT Main(HS_CONSTANT_DATA_OUTPUT tessFactors, const OutputPatch<DS_INPUT, 4> patch, float2 uv : SV_DomainLocation)
@@ -53,11 +59,11 @@ DS_OUTPUT Main(HS_CONSTANT_DATA_OUTPUT tessFactors, const OutputPatch<DS_INPUT, 
     
     float2 texCoord = lerp(lerp(patch[0].Texture, patch[1].Texture, uv.y), lerp(patch[3].Texture, patch[2].Texture, uv.y), uv.x);
  
-    //unable to sample textures in the domain shader of DirectX11, so instead providing pseudo code of how I would have done so:
-    //float displacement = displacementMap.Sample(linearSampler, texCoord).r;
+    uint2 texelCoords = uint2(texCoord * uint2(512, 512));
+    float displacement = displacementMap.Load(int3(texelCoords, 0));
     
     DS_OUTPUT output;
-    //pos.y += displacement * 0.1f;
+    pos.y += displacement * tessellationFactor.y;
     
     float4 vPos = float4(pos, 1.0f);
     matrix viewprojection = mul(projection, view);

@@ -1,7 +1,7 @@
 # CS-6610 Projects
 
 A series of graphics programming assignments completed as part of the [CS-6610 Course](https://graphics.cs.utah.edu/courses/cs6610/spring2021/) taught by Cem Yuksel at the University of Utah.  
-These projects were implemented using **DirectX 11** to deepen understanding of real-time rendering and graphics systems.
+These projects were implemented using DirectX 11 to deepen understanding of real-time rendering and graphics systems.
 
 Course playlist: [YouTube Series](https://youtube.com/playlist?list=PLplnkTzzqsZS3R5DjmCQsqupu43oS9CFN&si=Zsa16q55Y35dowvy)
 

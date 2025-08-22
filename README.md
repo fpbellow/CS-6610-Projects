@@ -9,10 +9,8 @@ Course playlist: [YouTube Series](https://youtube.com/playlist?list=PLplnkTzzqsZ
 
 ## Screenshots
 
-<img src="https://raw.githubusercontent.com/fpbellow/CS-6610-Projects/refs/heads/main/CS6610-Project8/screenshot.png" height="129" width="229" alt="Project 8 Screenshot"/>  
-<img src="https://github.com/fpbellow/CS-6610-Projects/blob/main/CS6610-Project7/screenshot.png?raw=true" height="129" width="229" alt="Project 7 Screenshot"/>  
-<img src="https://github.com/fpbellow/CS-6610-Projects/blob/main/CS6610-Project6/screenshot.png?raw=true" height="129" width="229" alt="Project 6 Screenshot"/>  
-<img src="https://github.com/fpbellow/CS-6610-Projects/blob/main/CS6610-Project4/screenshot.png?raw=true" height="129" width="229" alt="Project 4 Screenshot"/>  
+<img src="https://raw.githubusercontent.com/fpbellow/CS-6610-Projects/refs/heads/main/CS6610-Project8/screenshot.png" height="129" width="229" alt="Project 8 Screenshot"/>  <img src="https://github.com/fpbellow/CS-6610-Projects/blob/main/CS6610-Project7/screenshot.png?raw=true" height="129" width="229" alt="Project 7 Screenshot"/>  
+<img src="https://github.com/fpbellow/CS-6610-Projects/blob/main/CS6610-Project6/screenshot.png?raw=true" height="129" width="229" alt="Project 6 Screenshot"/>  <img src="https://github.com/fpbellow/CS-6610-Projects/blob/main/CS6610-Project4/screenshot.png?raw=true" height="129" width="229" alt="Project 4 Screenshot"/>  
 
 ---
 

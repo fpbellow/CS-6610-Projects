@@ -21,4 +21,5 @@ Course playlist: [YouTube Series](https://youtube.com/playlist?list=PLplnkTzzqsZ
 - [GLFW](https://github.com/glfw/glfw) – Multi-platform windowing and input
 - [ImGui](https://github.com/ocornut/imgui) – Immediate-mode GUI for debugging and UI overlays
 
+---
 This repository serves as a personal learning archive and a tribute to the CS-6610 course.
